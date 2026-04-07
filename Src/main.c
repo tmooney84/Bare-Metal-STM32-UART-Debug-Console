@@ -18,6 +18,7 @@ typedef struct {
 } RingBuffer;
 
 RingBuffer rx_buffer = {{0},0,0};
+uint8_t cmd_buffer[BUFFER_SIZE];
 
 
 //!!! REMOVE???
@@ -51,7 +52,8 @@ int main(void)
 	{
 		//processing the incoming bytes from the buffer
 
-		//create command buffer
+		//create command buffer >>> may need same \0 cap logic to be safe???
+		//or is it ok coming back from processing buffer?
 
 
 
@@ -90,7 +92,7 @@ int main(void)
 			print_sysinfo (processor speed / baud rate / memory size)
 
 		if CTRL + H:
-			print_help_menu
+			print_help_menu();
 
 
 
@@ -171,7 +173,7 @@ void USART2_IRQHandler(void){
 //will this need to go into a buffer before going to the host
 		 // machine due to size?
 
-		void print_help_menu(){
+		inline void print_help_menu(){
 		printf("echo "<message>": This display a message back on host machine.\r\n"
 		"led on: This command will turn the led on.\r\n"
 		"led off: This will turn the led off.\r\n"
