@@ -1,38 +1,14 @@
 #include <stdint.h>
 #include "uart.h"
 
-#define GPIOAEN		(1U<<0)
-#define UART2EN		(1U<<17)
-
-#define DBG_UART_BAUDRATE		115200
-#define SYS_FREQ				16000000
-#define APB1_CLK				SYS_FREQ
-#define CR1_TE					(1U<<3)
-#define CR1_RE					(1U<<2)
-#define CR1_UE					(1U<<13)
-#define CR1_RXNEIE				(1U<<5)
-#define SR_TXE					(1U<<7)
-
 
 static void uart_set_baudrate(uint32_t periph_clk,uint32_t baudrate);
-static void uart_write(int ch);
 
 int __io_putchar(int ch)
 {
 	uart_write(ch);
 	return ch;
 }
-
-//need to read and then put into buffer
-
-//need write_to_buffer function in interrupt
-//... but how to pull from buffer
-//without creating a poll with cpu situation or do this in main
-//
-//int __io_putchar(int ch){
-//	uart_read(ch);
-//	return ch;
-//}
 
 void uart_init(void)
 {
@@ -56,8 +32,12 @@ void uart_init(void)
 	GPIOA->MODER &=~(1U<<6);
 	GPIOA->MODER |=(1U<<7);
 
+	/* Set PA3 to Pull-Up */
+	GPIOA->PUPDR &= ~(1U << 7); // Clear bit 7
+	GPIOA->PUPDR |=  (1U << 6); // Set bit 6 (01 = Pull-up)
+
 	/*Set alternate function type to AF7(UART2_RX)*/
-	GPIOA->AFR[0] |=(1U<12);
+	GPIOA->AFR[0] |=(1U<<12);
 	GPIOA->AFR[0] |=(1U<<13);
 	GPIOA->AFR[0] |=(1U<<14);
 	GPIOA->AFR[0] &=~(1U<<15);
@@ -75,7 +55,7 @@ void uart_init(void)
      USART2->CR1 |= CR1_UE;
 
      /*Enable USART2 interrupt in the NVIC*/
-     NVIC_EnableIRQ(USART2_IRn);
+     NVIC_EnableIRQ(USART2_IRQn);
 
      /*Enable global interrupts*/
      __enable_irq();
@@ -83,7 +63,7 @@ void uart_init(void)
 
 
 
-static void uart_write(int ch)
+void uart_write(int ch)
 {
 	/*Make sure transmit data register is empty*/
 	while(!(USART2->SR & SR_TXE)){}

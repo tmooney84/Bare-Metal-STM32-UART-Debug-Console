@@ -14,6 +14,10 @@ void pc13_exti_init(void){
 	GPIOC->MODER &=~(1U<<26);
 	GPIOC->MODER &=~(1U<<27);
 
+	/* Set PC13 to Pull-Up */
+	GPIOC->PUPDR &= ~(1U << 27); // Clear bit 27
+	GPIOC->PUPDR |=  (1U << 26); // Set bit 26 (01 = Pull-up)
+
 	/*Enable clock access to SYSCFG*/
 	RCC->APB2ENR |= SYSCFGEN;
 
