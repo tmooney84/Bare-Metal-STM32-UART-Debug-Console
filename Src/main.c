@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 #include "uart.h"
 #include "gpio.h"
 #include "gpio_exti.h"
@@ -10,6 +11,8 @@
 //static void exti_pr13_callback(void);
 void EXTI15_10_IRQHandler(void);
 void print_help_menu(void);
+void print_sysinfo(void);
+void uart_clear_screen(void);
 
 typedef struct {
 	uint8_t buffer[BUFFER_SIZE];
@@ -18,8 +21,12 @@ typedef struct {
 } RingBuffer;
 
 RingBuffer rx_buffer = {{0},0,0};
-uint8_t cmd_buffer[BUFFER_SIZE];
 
+#define CMD_BUFF_SIZE 32
+uint8_t cmd_buffer[CMD_BUFF_SIZE];
+uint16_t cmd_idx = 0;
+
+const char ANSI_CLEAR[] = "\033[2J";
 
 //!!! REMOVE???
 uint8_t g_btn_press;
@@ -28,7 +35,6 @@ uint8_t g_btn_press;
 
 int main(void)
 {
-
 	/*Initialize debug UART*/
 	uart_init();
 
@@ -47,65 +53,128 @@ int main(void)
 			"press: CTRL+H for options\r\n"
 			);
 
-
 	while(1)
 	{
+		//processing interrupts such as buttons
 		//processing the incoming bytes from the buffer
 
-		//create command buffer >>> may need same \0 cap logic to be safe???
-		//or is it ok coming back from processing buffer?
+		if(rx_buffer.head_idx != rx_buffer.tail_idx){
+			uint8_t incoming_byte = rx_fifo.buffer[rx_fifo.tail];
+			rx_fifo.tail = (rx_fifo.tail + 1) % BUFFER_SIZE;
 
+			//Temporary debug line
+			printf("Received: 0x%02X\r\n", c);
 
-
-
-
-
-		/*parse incoming info waiting for \r\n \r \n then cap
-		 * it with \0>>> then use strncmp/strcmp
-
-
-
-
-
-
-		if echo:
-		 	 print back to computer through Rx >>> need a buffer
-
-		if led on:
-			led_on();
-			printf("LED ON\r\n");
-
-		if led off:
-			led_off()
-			printf("LED OFF\r\n");
-
-		if led toggle:
-			led_toggle()
-			bool led_on = get_led_state();
-			if(led_on){
-				printf("LED ON\r\n");
+			if (c == 0x08 || c == 0x7F) // Handles both Ctrl+M and DEL dependent on minicom settings
+			{
+				uart_clear_screen();
+				print_help_menu();
+				uart_clear_screen();
+				cmd_idx = 0;
 			}
-		else{
-			printf("LED OFF\r\n");
+
+
+			else if (incoming_byte == '\n' || incoming_byte == '\r'){
+				if(cmd_idx > 0 && cmd_idx < CMD_BUFF_SIZE - 1){
+					cmd_buffer[cmd_idx]= '\0';
+				}
+//				else {
+//					printf("error: unable to properly parse string.");
+//					return -1;
+//				}
+
+		 	 //print back to computer through Rx >>> need a buffer
+				if (strncmp(cmd_buffer, "echo ",5)==0){
+					parse_echo_payload(cmd_buffer + 5);
+				}
+
+
+				else if (strcmp(cmd_buffer, "led on") == 0){
+					led_on();
+					printf("LED ON\r\n");
+				}
+
+				else if (strcmp(cmd_buffer, "led off") == 0){
+					led_off();
+					printf("LED OFF\r\n");
+				}
+
+				else if (strcmp(cmd_buffer, "led toggle") == 0){
+					led_toggle();
+					bool led_on = get_led_state();
+					if(led_on){
+						printf("LED ON\r\n");
+					}
+					else{
+						printf("LED OFF\r\n");
+					}
+				}
+
+				else if (strcmp(cmd_buffer, "sys_info")== 0){
+					 print_sysinfo ();
+				}
 			}
-		if sys_info:
-			print_sysinfo (processor speed / baud rate / memory size)
 
-		if CTRL + H:
-			print_help_menu();
+			else if(cmd_index < (CMD_BUFF_SIZE - 1)){
+				cmd_buffer[cmd_index++] = incoming_byte;
+			}
+			}
 
-
-
+		}
 
 		for(volatile int i = 0; i < 10000; i++);
 
 		printf("UART DEBUG CONSOLE (System Ready)\r\n"
-			"press: CTRL+H for options\r\n")
+			"press: CTRL+H for options\r\n");
 
-
-		 */
 	}
 }
+
+//void clear_cmd_buffer(void){
+//	uint32_t *cb32 = (uint32_t *)cmd_buffer;
+//	size_t words = sizeof(cmd_buffer)/4;
+//	size_t rem = len % 4;
+//
+//	while(words--){
+//		*cb32++ = 0;
+//	}
+//
+//	uint8_t *p8 = (uint8_t *)cb32;
+//	while(rem--){
+//		*p8++ = 0;
+//	}
+//}
+
+void parse_echo_payload(char *payload){
+	char *start = strchr(payload, '\"');
+	char *end = strrchr(payload, '\"');
+
+	if(start != NULL && end != NULL && start != end){
+		uint32_t length = end - start - 1;
+
+		printf("%.*s\r\n", length, start + 1);
+	}
+	else{
+		printf("Error: Echo message must be enclosed in double quotes.\r\n");
+	}
+}
+
+
+int void uart_clear_screen(void){
+	for(int i = 0; ANSI_CLEAR[i] != '\0'; i++){
+		uart_write((int)ANSI_CLEAR[i]);
+	}
+}
+
+void print_sysinfo(void){
+//processor speed / baud rate / memory size
+	printf("processor speed: %d\r\n"
+		   "flash size: %dKB\r\n"
+		   "SRAM size: 128KBr\n"
+		   "baud rate: %d \r\n"
+		   , SYS_FREQ, *(uint16_t *)0x1FF7A22, DBG_UART_BAUDRATE);
+}
+
 //static void exti_pr13_callback(void){
 //	printf("BTN Pressed...\r\n");
 //	led_toggle();
@@ -173,12 +242,12 @@ void USART2_IRQHandler(void){
 //will this need to go into a buffer before going to the host
 		 // machine due to size?
 
-		inline void print_help_menu(){
-		printf("echo "<message>": This display a message back on host machine.\r\n"
-		"led on: This command will turn the led on.\r\n"
-		"led off: This will turn the led off.\r\n"
-		"led toggle: This will toggle the led switch on/off.\r\n"
-		"sys info: This will display vital system information including "
-		"board name, processor speed, baud rate, memory size\r\n");
-		return;
-		}
+void print_help_menu(void){
+printf("HELP MENU\r\n"
+	   "echo \"<message>\": This display a message back on host machine.\r\n"
+	   "led on: This command will turn the led on.\r\n"
+       "led off: This will turn the led off.\r\n"
+	   "led toggle: This will toggle the led switch on/off.\r\n"
+       "sys info: This will display vital system information including "
+       "board name, processor speed, baud rate, memory size\r\n");
+}
