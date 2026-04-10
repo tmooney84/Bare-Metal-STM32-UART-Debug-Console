@@ -1,0 +1,34 @@
+logFile $ORIGIN/UART_debug_console.log True
+
+$name?="nucleo_f411re"
+$bin?=$ORIGIN/UART_debug_console.elf
+$repl?=$ORIGIN/UART_debug_console.repl
+
+using sysbus
+mach create $name
+
+machine LoadPlatformDescription $repl
+
+
+showAnalyzer usart2
+
+machine StartGdbServer 3333
+
+macro reset
+"""
+    sysbus LoadELF $bin
+"""
+
+runMacro $reset
+## commenting out the "start command"
+# start
+
+######### TO RUN GDB CLIENT IN SEPARATE TERMINAL #################################
+# bash: arm-none-eabi-gdb proj_1_led_controller.elf                              #
+#           in gdb:                                                              #
+#               target remote :3333                                              #
+#               monitor reset  ### Reset virtual CPU and stop at the entry point #
+#               break main  ### set a breakpoint                                 #
+#               continue    ### start execution                                  #
+#               break EXTI15_10_IRQHandler                                       #
+##################################################################################

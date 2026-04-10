@@ -1,0 +1,8 @@
+# --- Test Engine ---
+robotframework==6.1       # The core testing framework
+
+# --- Renode Internal Bridge (Crucial for portable versions) ---
+pyyaml                      # Fixes your "No module named 'yaml'" error
+requests                    # Used by Renode for network/remote communication
+psutil                      # Helps Renode manage background processes
+pyserial                    # Required if your test interacts with UART/Serial
