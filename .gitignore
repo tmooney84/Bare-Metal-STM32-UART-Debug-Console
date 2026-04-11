@@ -1,6 +1,10 @@
+# Ignore virtual environment directories
+.venv*/
 .venv
+
+# Ignore specific file types
 *.o
 *.su
 *.cyclo
 *.list
-*.map
+*.map   

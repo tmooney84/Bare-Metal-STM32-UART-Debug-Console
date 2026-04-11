@@ -5,6 +5,9 @@ $bin?=$ORIGIN/UART_debug_console.elf
 $repl?=$ORIGIN/UART_debug_console.repl
 
 using sysbus
+
+path set $ORIGIN
+
 mach create $name
 
 machine LoadPlatformDescription $repl

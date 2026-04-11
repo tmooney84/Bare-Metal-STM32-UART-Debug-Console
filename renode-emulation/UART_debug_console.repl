@@ -35,12 +35,25 @@ usart2: UART.STM32_UART @ sysbus <0x40004400, +0x400>
 // SYSCFG is required to route GPIO signals to the EXTI controller
 syscfg: Python.PythonPeripheral @ sysbus 0x40013800
     size: 0x400
+    filename: "$ORIGIN/syscfg_stub.py"
+    //filename: "/home/hanna/STM32CubeIDE/workspace_1.13.0/UART_debug_console/renode-emulation/syscfg_stub.py"
+
+
 
 // EXTI controller bridges GPIO signals to the NVIC
 exti: IRQControllers.STM32F4_EXTI @ sysbus 0x40013C00
     [0-4] -> nvic0@[6-10]
-    [5-9] -> nvic0@23
-    [10-15] -> nvic0@40
+    [5-9] -> nvicInput23@[0-4]
+    [10-15] -> nvicInput40@[0-5]
+    [16, 17, 18, 22] -> nvic0@[1, 41, 42, 3]
+
+nvicInput23: Miscellaneous.CombinedInput @ none
+    numberOfInputs: 5
+    -> nvic0@23
+
+nvicInput40: Miscellaneous.CombinedInput @ none
+    numberOfInputs: 6
+    -> nvic0@40
 
 pwr: Python.PythonPeripheral @ sysbus 0x40007000
     size: 0x400
@@ -116,3 +129,4 @@ dwt: Miscellaneous.DWT @ sysbus 0xE0001000
 sysbus:
     init add:
         ApplySVD @https://dl.antmicro.com/projects/renode/svd/STM32F40x.svd.gz
+
