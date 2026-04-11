@@ -1,0 +1,6 @@
+.venv
+*.o
+*.su
+*.cyclo
+*.list
+*.map
