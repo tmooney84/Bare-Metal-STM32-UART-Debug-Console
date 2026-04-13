@@ -2,7 +2,8 @@
 
 This is a bare-metal interrupt-driven UART Debug Console written in C includes Button-LED logic, UART-based control of the on-board LED echoing strings from the host PC terminal, and supports debug messages from the firmware to a host PC terminal using programs such as PuTTY or minicom. The debug console uses direct register access and is written for the STM Nucleo-F411RE Development Board and a virtualized version of that board in Renode.
 
-[![Bare-Metal-STM32-UART-Debug-Console](https://www.youtube.com/watch?v=J2Zf5zxb7cU)
+[![Bare-Metal-STM32-UART-Debug-Console](https://i9.ytimg.com/vi/q3SN33JRCC0/mqdefault.jpg?sqp=CMTo9c4G-oaymwEmCMACELQB8quKqQMa8AEB-AH-CYAC0AWKAgwIABABGGUgUyhHMA8=&rs=AOn4CLB89l6lOf_aPKXerJyRa-ZBi8kZEA)](https://www.youtube.com/watch?v=J2Zf5zxb7cU)
+
 
 ## Table of Contents
 
