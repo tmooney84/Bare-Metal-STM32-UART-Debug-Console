@@ -36,6 +36,7 @@ usart2: UART.STM32_UART @ sysbus <0x40004400, +0x400>
 syscfg: Python.PythonPeripheral @ sysbus 0x40013800
     size: 0x400
     filename: "@$ORIGIN/syscfg_stub.py"
+    //filename: @$ORIGIN/syscfg_stub.py  >>> maybe this one?
     //filename: "/home/hanna/STM32CubeIDE/workspace_1.13.0/UART_debug_console/renode-emulation/syscfg_stub.py"
 
 
