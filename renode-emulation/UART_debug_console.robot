@@ -15,7 +15,12 @@ Setup Simulation
 LED Toggles On Via Button Interrupt
     [Setup]    Setup Simulation
     Execute Command    ${BUTTON} Press
+    Execute Command	emulation RunFor "0.05"
+    #Execute Command    emulation Sleep 50ms
     Execute Command    ${BUTTON} Release
+    Execute Command	emulation RunFor "0.05"
+    #Execute Command    emulation Sleep 50ms
+
     Wait For Line On Uart    BTN Pressed...
     Wait For Line On Uart    LED ON
     ${state}=    Execute Command    ${LED} State

@@ -1,7 +1,7 @@
 sysbus:
     init:
         Tag <0x50000000 0x40000> "usbotg_fs"
-        Tag <0x40020000 0x2000> "pinctrl"
+        //Tag <0x40020000 0x2000> "pinctrl"
         Tag <0x40000000 0x400> "timers2"
         Tag <0x40000400 0x400> "timers3"
         Tag <0x40000800 0x400> "timers4"
@@ -19,7 +19,7 @@ sysbus:
         Tag <0x40012c00 0x400> "sdmmc1"
         Tag <0x40013000 0x400> "i2s1"
         Tag <0x40013400 0x400> "i2s4 / spi4"
-        Tag <0x40013c00 0x400> "exti"
+        //Tag <0x40013c00 0x400> "exti"
         Tag <0x40014000 0x400> "timers9"
         Tag <0x40014400 0x400> "timers10"
         Tag <0x40014800 0x400> "timers11"
@@ -28,6 +28,10 @@ sysbus:
         Tag <0x40026000 0x400> "dma1"
         Tag <0x40026400 0x400> "dma2"
         Tag <0xe000e010 0x10> "systick"
+
+// --- Communications ---
+usart1: UART.STM32_UART @ sysbus <0x40011000, +0x400>
+    ->nvic0@37
 
 usart2: UART.STM32_UART @ sysbus <0x40004400, +0x400>
     ->nvic0@38
@@ -40,15 +44,21 @@ usart2: UART.STM32_UART @ sysbus <0x40004400, +0x400>
     //filename: "syscfg_stub.py" 				
     //filename: "/home/hanna/STM32CubeIDE/workspace_1.13.0/UART_debug_console/renode-emulation/syscfg_stub.py"
 
+
+
+// --- Interrupt & System Control ---
 syscfg: Python.PythonPeripheral @ sysbus 0x40013800
     size: 0x400
     script: '''
 if request.IsRead:
-    request.Value = 0
+    if request.Offset == 0x14:
+        # 0x20 maps EXTI13 to Port C (0x2 in bits [7:4])
+        request.Value = 0x20	
+    else:
+        request.Value = 0
 elif request.IsWrite:
     pass
 '''
-
 
 // EXTI controller bridges GPIO signals to the NVIC
 //STM32f4_EXTI only models 14 output lines vs. [0-22] on physical controller
@@ -56,6 +66,7 @@ exti: IRQControllers.STM32F4_EXTI @ sysbus 0x40013C00
     [0-4] -> nvic0@[6-10]
     [5-9] -> nvicInput23@[0-4]
     [10-13] -> nvicInput40@[0-3]
+    //[10-15] -> nvicInput40@[0-5]
 
 nvicInput23: Miscellaneous.CombinedInput @ none
     numberOfInputs: 5
@@ -70,8 +81,6 @@ pwr: Python.PythonPeripheral @ sysbus 0x40007000
     initable: true
     filename: "scripts/pydev/flipflop.py"
 
-usart1: UART.STM32_UART @ sysbus <0x40011000, +0x400>
-    ->nvic0@37
 
 // Peripherals - GPIO and LED
 greenled2: Miscellaneous.LED @ gpioa 5
@@ -94,14 +103,9 @@ gpiog: GPIOPort.STM32_GPIOPort @ sysbus <0x40021800, +0x400>
 
 gpioh: GPIOPort.STM32_GPIOPort @ sysbus <0x40021c00, +0x400>
 
-flash0: Memory.MappedMemory @ sysbus 0x8000000
-    size: 0x80000
-
-sram0: Memory.MappedMemory @ sysbus 0x20000000
-    size: 0x20000
 
 //Peripherals - Button
-buttonPC13: Miscellaneous.Button @ gpioc 0x13
+buttonPC13: Miscellaneous.Button @ gpioc 13
     invert: true
     -> gpioc@13
     
@@ -112,10 +116,18 @@ nvic0: IRQControllers.NVIC @ {
     -> cpu0@0
     systickFrequency: 96000000
 
+// --- Core & Memory ---
 cpu0: CPU.CortexM @ sysbus
     cpuType: "cortex-m4f"
     nvic: nvic0
 
+flash0: Memory.MappedMemory @ sysbus 0x8000000
+    size: 0x80000
+
+sram0: Memory.MappedMemory @ sysbus 0x20000000
+    size: 0x20000
+
+// --- Additional Peripherals ---
 i2c1: I2C.STM32F4_I2C @ sysbus 0x40005400
     EventInterrupt->nvic0@31
     ErrorInterrupt->nvic0@32
