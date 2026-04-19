@@ -6,7 +6,7 @@ This is a bare-metal interrupt-driven UART Debug Console written in C includes B
   <a href="https://www.youtube.com/watch?v=J2Zf5zxb7cU">
     <img src="https://img.youtube.com/vi/J2Zf5zxb7cU/maxresdefault.jpg" alt="Video Thumbnail" width="600">
   </a>
-  <p><b>Bare-Metal-STM32-UART-Debug-Console</b></p>
+  <p><b>Bare-Metal-STM32-UART-Debug-Console Demonstration</b></p>
 </div>
 
 ## Table of Contents
